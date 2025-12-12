@@ -1,0 +1,53 @@
+[project]
+name = "mitre-mcp-server"
+version = "0.1.0"
+description = "MCP server providing access to MITRE ATT&CK threat intelligence framework"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Inoussa Mouiche", email = "mouiche@uwindsor.ca" }
+]
+license = { text = "Apache-2.0" }
+keywords = ["mitre", "attack", "mcp", "threat-intelligence", "cybersecurity"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Security",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "mcp>=1.1.0",
+    "stix2>=3.0.0",
+    "mitreattack-python>=3.0.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+mitre-mcp-server = "mitre_mcp_server.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mitre_mcp_server"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-asyncio>=0.24.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
