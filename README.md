@@ -89,6 +89,15 @@ npm install -g @imouiche/mitre-attack-mcp-server
 ```bash
 npx @imouiche/mitre-attack-mcp-server
 ```
+### Via PyPI (Python Users)
+```bash
+pip install mitre-mcp-server
+```
+
+### Via uv (Modern Python)
+```bash
+uv pip install mitre-mcp-server
+```
 
 ### Local Development
 
