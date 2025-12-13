@@ -1,0 +1,42 @@
+{
+  "name": "@imouiche/mitre-attack-mcp-server",
+  "version": "0.1.1",
+  "description": "Complete MCP server for MITRE ATT&CK threat intelligence framework with 50+ tools",
+  "mcpName": "io.github.imouiche/mitre-attack-mcp-server",
+  "author": "Dr. Inoussa Mouiche <mouiche@uwindsor.ca> WASP Lab, University of Windsor",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imouiche/complete-mitre-attack-mcp-server.git"
+  },
+  "keywords": [
+    "mcp",
+    "mitre",
+    "attack",
+    "cybersecurity",
+    "threat-detection",
+    "incident-response",
+    "cyber-threat-intelligence",
+    "threat-intelligence",
+    "cyber-defense",
+    "security-operations",
+    "threat-analysis",
+    "threat-hunting",
+    "blue-team",
+    "red-team",
+    "cyber-attack",
+    "cybersecurity-tools",
+    "open-source",
+    "model-context-protocol"
+  ],
+  "bin": {
+    "mitre-mcp-server": "run.js"
+  },
+  "files": [
+    "run.js",
+    "pyproject.toml",
+    "src/**/*.py",
+    "README.md",
+    "LICENSE"
+  ]
+}
