@@ -1,6 +1,6 @@
 {
   "name": "@imouiche/mitre-attack-mcp-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Complete MCP server for MITRE ATT&CK threat intelligence framework with 50+ tools",
   "mcpName": "io.github.imouiche/mitre-attack-mcp-server",
   "author": "Dr. Inoussa Mouiche <mouiche@uwindsor.ca> WASP Lab, University of Windsor",
