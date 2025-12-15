@@ -65,7 +65,7 @@ Just **official MITRE data**, structured and reliable.
 
 ## ✨ Key Features
 
-- ✅ **50+ MCP tools** across ATT&CK domains (Enterprise, Mobile, ICS)
+- ✅ **65+ MCP tools** across ATT&CK domains (Enterprise, Mobile, ICS)
 - ✅ Automatic **STIX download & caching** on first run
 - ✅ Native **ATT&CK Navigator layer generation**
 - ✅ Designed for **LLMs & MCP-compatible clients**
