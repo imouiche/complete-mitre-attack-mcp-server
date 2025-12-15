@@ -78,7 +78,13 @@ Just **official MITRE data**, structured and reliable.
 
 ## 📦 Installation
 
-### npm (recommended)
+### Via PyPI  (recommended) - Python Users
+
+```bash
+pip install mitre-mcp-server
+```
+
+### npm
 
 ```bash
 npm install -g @imouiche/mitre-attack-mcp-server
@@ -89,10 +95,7 @@ npm install -g @imouiche/mitre-attack-mcp-server
 ```bash
 npx @imouiche/mitre-attack-mcp-server
 ```
-### Via PyPI (Python Users)
-```bash
-pip install mitre-mcp-server
-```
+
 
 ### Via uv (Modern Python)
 ```bash
@@ -122,7 +125,7 @@ uv sync
 ### 1. Install
 
 ```bash
-npm install -g @imouiche/mitre-attack-mcp-server
+pip install mitre-mcp-server
 ```
 
 ### 2. Configure Claude Desktop
@@ -187,7 +190,7 @@ npx @imouiche/mitre-attack-mcp-server
 
 ## 🛠️ Available Tools
 
-The server exposes **80+ MCP tools** covering all major MITRE ATT&CK entities and relationships.
+The server exposes **50+ MCP tools** covering all major MITRE ATT&CK entities and relationships.
 
 ---
 
@@ -478,6 +481,9 @@ AI/ML Researcher | Cybersecurity | Agentic AI Systems | Software Engineering
 - 💼 LinkedIn: [Inoussa Mouiche, Ph.D.](https://www.linkedin.com/in/inoussa-mouiche-ph-d-b5b5138b/)
 - 📚 Google Scholar: [Publications](https://scholar.google.com/citations?user=_d4cEVoAAAAJ&hl=en)
 
+🎓 **Award Nomination** 
+- Gold Medal: [The Governor General's Academic Medal ](https://www.gg.ca/en/honours/governor-generals-awards/governor-generals-academic-medal)
+
 💼 **Open to opportunities** in:
 - AI/ML Engineering & Research
 - Cybersecurity & Threat Intelligence
@@ -492,7 +498,7 @@ AI/ML Researcher | Cybersecurity | Agentic AI Systems | Software Engineering
 - Built on [MITRE ATT&CK®](https://attack.mitre.org/) - the industry standard for adversary tactics and techniques
 - Powered by [mitreattack-python](https://github.com/mitre-attack/mitreattack-python) - official MITRE library
 - Implements [Model Context Protocol](https://modelcontextprotocol.io) - Anthropic's standard for AI-tool integration
-- Inspired by the amazing MCP developer community including [R. Jasper](https://www.remyjaspers.com/blog/mitre_attack_mcp_server/)
+- Inspired by the amazing MCP developer community including [R. Jasper](https://www.remyjaspers.com/blog/mitre_attack_mcp_server/), and more...
 
 **MITRE ATT&CK®** is a registered trademark of The MITRE Corporation.
 
@@ -502,7 +508,7 @@ AI/ML Researcher | Cybersecurity | Agentic AI Systems | Software Engineering
 
 **⭐ Star this repo if you find it useful!**
 
-**Interested in collaborating on agentic security systems?** [Let's connect!](https://www.linkedin.com/in/inoussa-mouiche-ph-d-b5b5138b/)
+**Interested in collaborating on agentic engineering systems?** [Let's connect!](https://www.linkedin.com/in/inoussa-mouiche-ph-d-b5b5138b/)
 
 Made with ❤️ for the cybersecurity and AI communities
 
