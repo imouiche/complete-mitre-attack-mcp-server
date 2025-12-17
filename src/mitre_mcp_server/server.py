@@ -474,7 +474,7 @@ async def get_object_by_attack_id(
             "type": stix_type,
             "description": description,
         },
-        # "formatted": formatted,
+        "formatted": formatted,
         "message": f"Object found for ATT&CK ID '{attack_id}' in domain '{domain}'.",
     }
 
@@ -562,7 +562,7 @@ async def get_object_by_stix_id(
             "type": stix_type,
             "description": description,
         },
-        # "formatted": formatted,
+         "formatted": formatted,
         "message": f"Object found for STIX ID '{stix_id}' in domain '{domain}'.",
     }
 
@@ -673,7 +673,7 @@ async def get_objects_by_name(
     return {
         "count": len(structured_objects),
         "objects": structured_objects,
-        # "formatted": formatted,
+        "formatted": formatted,
         "message": (
             f"Found {len(structured_objects)} object(s) with name '{name}' "
             f"and type '{stix_type}' in domain '{domain}'."
@@ -895,7 +895,7 @@ async def get_techniques_by_tactic(
     return {
         "count": len(structured),
         "techniques": structured,
-        # "formatted": formatted,
+        "formatted": formatted,
         "message": (
             f"Found {len(structured)} technique(s) for tactic '{tactic}' "
             f"in domain '{domain}'."
@@ -1014,7 +1014,7 @@ async def search_techniques(
     return {
         "count": len(structured),
         "techniques": structured,
-        # "formatted": formatted,
+        "formatted": formatted,
         "message": (
             f"Found {len(structured)} technique(s) in domain '{domain}' "
             f"matching query '{query}'."
@@ -1292,7 +1292,7 @@ async def search_groups(
     return {
         "count": len(response_groups),
         "groups": response_groups,
-        # "formatted": formatted,
+        "formatted": formatted,
         "message": (
             f"Found {len(response_groups)} APT group(s) in domain '{domain}' "
             f"matching query '{query}'."
@@ -1504,7 +1504,7 @@ async def get_group_techniques(
         },
         "count": len(techniques_structured),
         "techniques": techniques_structured,
-        # "formatted": formatted,
+        "formatted": formatted,
         "message": (
             f"Found {len(techniques_structured)} technique(s) used by group "
             f"'{group_name}' in domain '{domain}'."
@@ -6827,6 +6827,9 @@ async def get_techniques_mitigated_by_mitigation(
         ),
     }
 
+
+from typing import Any, Dict, List, Optional
+
 @mcp.tool()
 async def get_mitigations_mitigating_technique(
     technique_stix_id: str,
@@ -6836,83 +6839,51 @@ async def get_mitigations_mitigating_technique(
     """
     Get all mitigations that address a specific technique.
 
-    Shows which defensive controls reduce the effectiveness
-    of this technique.
+    Helper returns: list[RelationshipEntry[Mitigation]]
+    So each item is a wrapper that contains a Mitigation object (usually in `.object`).
+    We must unwrap before extracting fields.
 
-    Args:
-        technique_stix_id: Technique STIX UUID identifier
-                           (e.g., 'attack-pattern--UUID').
-        domain: ATT&CK domain ('enterprise', 'mobile', 'ics').
-        include_description: Include mitigation descriptions.
-
-    Returns:
-        {
-          "found": bool,
-          "technique": {
-              "attack_id": "Txxxx or Txxxx.xxx" | null,
-              "name": "<technique name or null>",
-              "stix_id": "<attack-pattern--UUID>"
-          } | null,
-          "count": int,
-          "mitigations": [
-              {
-                  "attack_id": "Mxxxx" | null,
-                  "name": "<mitigation name>",
-                  "stix_id": "<course-of-action--UUID>",
-                  "description": "<text or null>",
-              },
-              ...
-          ],
-          "formatted": "<multi-line summary>",
-          "message": "<status message>"
-        }
+    Returns (same schema as before):
+      {
+        "found": bool,
+        "technique": {...} | null,
+        "count": int,
+        "mitigations": [...],
+        "formatted": str,
+        "message": str
+      }
     """
     attack_data = get_attack_data(domain)
 
-    # Resolve technique context
+    # --- Resolve technique context ---
     try:
         technique_obj = attack_data.get_object_by_stix_id(technique_stix_id)
     except Exception:
         technique_obj = None
 
-    technique_info = None
-    if technique_obj is not None:
-        if isinstance(technique_obj, dict):
-            t_name = technique_obj.get("name")
-        else:
-            t_name = getattr(technique_obj, "name", None)
-
-        try:
-            t_attack_id = attack_data.get_attack_id(technique_stix_id)
-        except Exception:
-            t_attack_id = None
-
-        technique_info = {
-            "attack_id": t_attack_id,
-            "name": t_name,
-            "stix_id": technique_stix_id,
-        }
+    if isinstance(technique_obj, dict):
+        t_name = technique_obj.get("name")
     else:
-        t_name = None
-        try:
-            t_attack_id = attack_data.get_attack_id(technique_stix_id)
-        except Exception:
-            t_attack_id = None
-        technique_info = {
-            "attack_id": t_attack_id,
-            "name": t_name,
-            "stix_id": technique_stix_id,
-        }
+        t_name = getattr(technique_obj, "name", None) if technique_obj is not None else None
 
-    # Fetch mitigations from MITRE helper
     try:
-        mitigations = attack_data.get_mitigations_mitigating_technique(
-            technique_stix_id
-        ) or []
+        t_attack_id = attack_data.get_attack_id(technique_stix_id)
     except Exception:
-        mitigations = []
+        t_attack_id = None
 
-    if not mitigations:
+    technique_info = {
+        "attack_id": t_attack_id,
+        "name": t_name,
+        "stix_id": technique_stix_id,
+    }
+
+    # --- Fetch relationship entries from MITRE helper ---
+    try:
+        rel_entries = attack_data.get_mitigations_mitigating_technique(technique_stix_id) or []
+    except Exception:
+        rel_entries = []
+
+    if not rel_entries:
         return {
             "found": False,
             "technique": technique_info,
@@ -6925,11 +6896,35 @@ async def get_mitigations_mitigating_technique(
             ),
         }
 
+    def _unwrap_mitigation(entry: Any) -> Any:
+        """
+        RelationshipEntry[Mitigation] usually stores the Mitigation in `.object`.
+        Some implementations may store it in dict["object"].
+        """
+        # RelationshipEntry object with attribute `.object`
+        if hasattr(entry, "object"):
+            return getattr(entry, "object")
+
+        # Dict-like wrapper
+        if isinstance(entry, dict):
+            if isinstance(entry.get("object"), (dict, object)):
+                return entry.get("object")
+
+        # If it's already a mitigation (unexpected, but safe)
+        return entry
+
+    mitigation_objects: List[Any] = []
+    for e in rel_entries:
+        m = _unwrap_mitigation(e)
+        if m is None:
+            continue
+        mitigation_objects.append(m)
+
     mitigation_entries: List[Dict[str, Any]] = []
-    for m in mitigations:
+    for m in mitigation_objects:
         if isinstance(m, dict):
             m_name = m.get("name")
-            m_stix = m.get("id")
+            m_stix = m.get("id")  # STIX ID for course-of-action
             m_desc = m.get("description") if include_description else None
         else:
             m_name = getattr(m, "name", None)
@@ -6937,7 +6932,7 @@ async def get_mitigations_mitigating_technique(
             m_desc = getattr(m, "description", None) if include_description else None
 
         try:
-            m_attack_id = attack_data.get_attack_id(m_stix)
+            m_attack_id = attack_data.get_attack_id(m_stix) if m_stix else None
         except Exception:
             m_attack_id = None
 
@@ -6950,11 +6945,18 @@ async def get_mitigations_mitigating_technique(
             }
         )
 
+    # Format using actual mitigation objects (not relationship entries)
     formatted = format_objects(
-        mitigations,
+        mitigation_objects,
         include_description=include_description,
         domain=domain,
     )
+
+    # Filter out empty rows if any (defensive)
+    mitigation_entries = [
+        x for x in mitigation_entries
+        if x.get("name") or x.get("stix_id") or x.get("attack_id")
+    ]
 
     return {
         "found": True,
@@ -6967,229 +6969,266 @@ async def get_mitigations_mitigating_technique(
             f"technique '{technique_info.get('attack_id')}' "
             f"({technique_info.get('name')})."
         ),
+        "debug": {
+            "raw_relationship_entries": len(rel_entries),
+            "unwrapped_mitigations": len(mitigation_objects),
+        },
     }
+
 
 # ---------------------------------------------------------------------------
 # Technique → Data components (detection)
 # ---------------------------------------------------------------------------
-
 @mcp.tool()
-async def get_datacomponents_detecting_technique(
+def get_datacomponents_detecting_technique(
     technique_stix_id: str,
     domain: str = "enterprise",
-    include_description: bool = True,
-) -> Dict[str, Any]:
+    include_description: bool = False,
+) -> dict:
     """
     Get all data components that can detect a specific technique.
 
-    Data components are specific aspects of telemetry that can be used
-    to detect adversary behavior (e.g., Process Creation, OS API Execution).
+    Primary mode:
+      - Use mitreattack-python relationship traversal (if present)
 
-    Args:
-        technique_stix_id: Technique STIX UUID identifier
-                           (e.g., 'attack-pattern--UUID').
-        domain: ATT&CK domain ('enterprise', 'mobile', 'ics').
-        include_description: Whether to include data component descriptions.
+    Fallback mode (when relationship traversal yields 0):
+      - Read technique.x_mitre_data_sources (strings)
+      - Resolve data source objects by name
+      - Return data components whose x_mitre_data_source_ref points to those data sources
+      - If the string includes a component name (e.g., "Process: Process Creation"),
+        filter to that component when possible.
 
-    Returns:
-        {
-          "technique": {
-              "attack_id": "Txxxx or Txxxx.xxx" | null,
-              "name": "<technique name or null>",
-              "stix_id": "<attack-pattern--UUID>",
-              "description": "<text or null>",
-          } | null,
-
-          "count": <number of data components>,
-
-          "datacomponents": [
-            {
-              "name": "<data component name>",
-              "stix_id": "<x-mitre-data-component--UUID>",
-              "description": "<text or null>",
-              "data_source_stix_id": "<x-mitre-data-source--UUID or null>",
-              "data_source_name": "<data source name or null>",
-              "data_source_attack_id": "<data source ATT&CK ID or null>",
-              "relationships": [
-                {
-                  "stix_id": "<relationship--UUID>",
-                  "relationship_type": "<type>",
-                  "description": "<relationship description or null>",
-                  "source_ref": "<source STIX ID>",
-                  "target_ref": "<target STIX ID>",
-                },
-                ...
-              ],
-            },
-            ...
-          ],
-
-          "formatted": "<human-readable list of data components>",
-          "message": "<status summary>"
-        }
+    Returns the same structure as before, plus a debug block.
     """
     attack_data = get_attack_data(domain)
 
-    # --- Resolve technique context (optional, but useful for UX) ---
+    def _get_attr(obj, name, default=None):
+        if obj is None:
+            return default
+        # support both dict and STIX objects
+        if isinstance(obj, dict):
+            return obj.get(name, default)
+        return getattr(obj, name, default)
+
+    def _technique_info(tech_obj) -> dict:
+        attack_id = None
+        name = _get_attr(tech_obj, "name")
+        desc = _get_attr(tech_obj, "description")
+        stix_id = _get_attr(tech_obj, "id")
+
+        try:
+            if stix_id:
+                attack_id = attack_data.get_attack_id(stix_id)
+        except Exception:
+            attack_id = None
+
+        return {
+            "attack_id": attack_id,
+            "name": name,
+            "stix_id": stix_id,
+            "description": desc if include_description else (desc[:120] + "..." if isinstance(desc, str) and len(desc) > 120 else desc),
+        }
+
+    # ---------- 1) Load technique ----------
+    tech_obj = None
     try:
         tech_obj = attack_data.get_object_by_stix_id(technique_stix_id)
     except Exception:
         tech_obj = None
 
-    technique_info: Optional[Dict[str, Any]] = None
-    if tech_obj is not None:
-        if isinstance(tech_obj, dict):
-            t_name = tech_obj.get("name")
-            t_desc = tech_obj.get("description") if include_description else None
-        else:
-            t_name = getattr(tech_obj, "name", None)
-            t_desc = getattr(tech_obj, "description", None) if include_description else None
+    technique_info = _technique_info(tech_obj) if tech_obj else None
+
+    # ---------- 2) Primary: relationship-based lookup ----------
+    datacomponents_structured: list[dict] = []
+    debug = {
+        "domain": domain,
+        "query_mode": "relationship_first_then_fallback",
+        "attack_id_used": technique_info["attack_id"] if technique_info else None,
+        "stix_id_used": technique_stix_id,
+    }
+
+    try:
+        rel_results = attack_data.get_datacomponents_detecting_technique(technique_stix_id)
+        # Expected shape from mitreattack-python is often:
+        #   [ { "object": <data-component>, "relationships": [<relationship>, ...] }, ... ]
+        if isinstance(rel_results, list) and rel_results:
+            for item in rel_results:
+                if not isinstance(item, dict):
+                    continue
+                obj = item.get("object")
+                rels = item.get("relationships", [])
+
+                dc_name = _get_attr(obj, "name")
+                dc_stix = _get_attr(obj, "id")
+                dc_desc = _get_attr(obj, "description")
+
+                ds_ref = _get_attr(obj, "x_mitre_data_source_ref")
+                ds_name = None
+                ds_attack_id = None
+                if ds_ref:
+                    try:
+                        ds_obj = attack_data.get_object_by_stix_id(ds_ref)
+                        ds_name = _get_attr(ds_obj, "name")
+                        try:
+                            ds_attack_id = attack_data.get_attack_id(ds_ref)
+                        except Exception:
+                            ds_attack_id = None
+                    except Exception:
+                        ds_name = None
+
+                datacomponents_structured.append(
+                    {
+                        "name": dc_name,
+                        "stix_id": dc_stix,
+                        "description": dc_desc if include_description else None,
+                        "data_source_stix_id": ds_ref,
+                        "data_source_name": ds_name,
+                        "data_source_attack_id": ds_attack_id,
+                        "relationships": [
+                            {
+                                "stix_id": _get_attr(r, "id"),
+                                "relationship_type": _get_attr(r, "relationship_type"),
+                                "description": _get_attr(r, "description") if include_description else None,
+                                "source_ref": _get_attr(r, "source_ref"),
+                                "target_ref": _get_attr(r, "target_ref"),
+                            }
+                            for r in (rels if isinstance(rels, list) else [])
+                        ],
+                    }
+                )
+
+            debug["query_mode"] = "relationship_detects"
+    except Exception:
+        # ignore and fall back
+        pass
+
+    # ---------- 3) Fallback: x_mitre_data_sources mapping ----------
+    if not datacomponents_structured and tech_obj is not None:
+        debug["query_mode"] = "fallback_x_mitre_data_sources"
+
+        # Example strings can look like:
+        #   "Process: Process Creation"
+        #   "Network Traffic: Network Connection Creation"
+        #   or sometimes just "Process"
+        x_mitre_data_sources = _get_attr(tech_obj, "x_mitre_data_sources", default=[]) or []
+
+        # Build lookup maps
+        try:
+            datasources = attack_data.get_datasources(remove_revoked_deprecated=True)
+        except Exception:
+            datasources = []
 
         try:
-            t_attack_id = attack_data.get_attack_id(technique_stix_id)
+            datacomponents_all = attack_data.get_datacomponents(remove_revoked_deprecated=True)
         except Exception:
-            t_attack_id = None
+            datacomponents_all = []
 
-        technique_info = {
-            "attack_id": t_attack_id,
-            "name": t_name,
-            "stix_id": technique_stix_id,
-            "description": t_desc,
-        }
+        ds_by_name = {}
+        for ds in datasources or []:
+            name = _get_attr(ds, "name")
+            if isinstance(name, str):
+                ds_by_name[name.strip().lower()] = ds
 
-    # --- Fetch data components from MITRE helper ---
-    try:
-        entries = attack_data.get_datacomponents_detecting_technique(
-            technique_stix_id
-        ) or []
-    except Exception:
-        entries = []
+        # index components by parent datasource ref
+        comps_by_ds_ref = {}
+        for dc in datacomponents_all or []:
+            ds_ref = _get_attr(dc, "x_mitre_data_source_ref")
+            if not ds_ref:
+                continue
+            comps_by_ds_ref.setdefault(ds_ref, []).append(dc)
 
-    if not entries:
-        return {
-            "technique": technique_info,
-            "count": 0,
-            "datacomponents": [],
-            "formatted": "",
-            "message": (
-                f"No data components found that detect technique STIX ID "
-                f"'{technique_stix_id}' in domain '{domain}'."
-            ),
-        }
+        def _parse_ds_string(s: str) -> tuple[str, str | None]:
+            # "Process: Process Creation" -> ("Process", "Process Creation")
+            if ":" in s:
+                left, right = s.split(":", 1)
+                return left.strip(), right.strip() if right.strip() else None
+            return s.strip(), None
 
-    datacomponents_structured: List[Dict[str, Any]] = []
-    dc_objects_for_format: List[Any] = []
+        for ds_str in x_mitre_data_sources:
+            if not isinstance(ds_str, str) or not ds_str.strip():
+                continue
+            ds_name, component_name = _parse_ds_string(ds_str)
 
-    for entry in entries:
-        # Expected from mitreattack: {"object": <data_component>, "relationships": [...]}
-        if isinstance(entry, dict) and ("object" in entry or "relationships" in entry):
-            dc_obj = entry.get("object", entry)
-            rels = entry.get("relationships", [])
-        else:
-            dc_obj = entry
-            rels = []
+            ds_obj = ds_by_name.get(ds_name.lower())
+            if ds_obj is None:
+                continue
 
-        if dc_obj is None:
-            continue
-
-        dc_objects_for_format.append(dc_obj)
-
-        # Extract data component fields
-        if isinstance(dc_obj, dict):
-            name = dc_obj.get("name")
-            stix_id = dc_obj.get("id")
-            desc = dc_obj.get("description") if include_description else None
-            ds_ref = (
-                dc_obj.get("x_mitre_data_source_ref")
-                or dc_obj.get("x-mitre-data-source-ref")
-            )
-        else:
-            name = getattr(dc_obj, "name", None)
-            stix_id = getattr(dc_obj, "id", None)
-            desc = getattr(dc_obj, "description", None) if include_description else None
-            ds_ref = getattr(dc_obj, "x_mitre_data_source_ref", None)
-
-        # Resolve parent data source (if any)
-        data_source_stix_id = ds_ref
-        data_source_name = None
-        data_source_attack_id = None
-
-        if ds_ref:
+            ds_stix = _get_attr(ds_obj, "id")
+            ds_attack_id = None
             try:
-                ds_obj = attack_data.get_object_by_stix_id(ds_ref)
+                if ds_stix:
+                    ds_attack_id = attack_data.get_attack_id(ds_stix)
             except Exception:
-                ds_obj = None
+                ds_attack_id = None
 
-            if ds_obj is not None:
-                if isinstance(ds_obj, dict):
-                    ds_name = ds_obj.get("name")
-                    ds_internal_id = ds_obj.get("id")
-                else:
-                    ds_name = getattr(ds_obj, "name", None)
-                    ds_internal_id = getattr(ds_obj, "id", None)
+            candidates = comps_by_ds_ref.get(ds_stix, [])
+            if component_name:
+                # filter down if component specified
+                filtered = []
+                for dc in candidates:
+                    n = _get_attr(dc, "name")
+                    if isinstance(n, str) and n.strip().lower() == component_name.lower():
+                        filtered.append(dc)
+                # if nothing matched strictly, keep all candidates (better than returning nothing)
+                candidates = filtered or candidates
 
-                data_source_name = ds_name
-                try:
-                    data_source_attack_id = attack_data.get_attack_id(ds_internal_id)
-                except Exception:
-                    data_source_attack_id = None
+            for dc in candidates:
+                dc_name = _get_attr(dc, "name")
+                dc_stix = _get_attr(dc, "id")
+                dc_desc = _get_attr(dc, "description")
 
-        # Relationship metadata (data-component↔technique relationships)
-        relationships_info = []
-        for r in rels:
-            if isinstance(r, dict):
-                r_id = r.get("id")
-                r_type = r.get("relationship_type")
-                r_desc = r.get("description")
-                r_source = r.get("source_ref")
-                r_target = r.get("target_ref")
-            else:
-                r_id = getattr(r, "id", None)
-                r_type = getattr(r, "relationship_type", None)
-                r_desc = getattr(r, "description", None)
-                r_source = getattr(r, "source_ref", None)
-                r_target = getattr(r, "target_ref", None)
+                datacomponents_structured.append(
+                    {
+                        "name": dc_name,
+                        "stix_id": dc_stix,
+                        "description": dc_desc if include_description else None,
+                        "data_source_stix_id": ds_stix,
+                        "data_source_name": _get_attr(ds_obj, "name"),
+                        "data_source_attack_id": ds_attack_id,
+                        "relationships": [],  # fallback mode: not relationship-derived
+                    }
+                )
 
-            relationships_info.append(
-                {
-                    "stix_id": r_id,
-                    "relationship_type": r_type,
-                    "description": r_desc,
-                    "source_ref": r_source,
-                    "target_ref": r_target,
-                }
-            )
+        # de-dup by stix_id
+        seen = set()
+        deduped = []
+        for dc in datacomponents_structured:
+            sid = dc.get("stix_id")
+            if sid and sid in seen:
+                continue
+            if sid:
+                seen.add(sid)
+            deduped.append(dc)
+        datacomponents_structured = deduped
 
-        datacomponents_structured.append(
-            {
-                "name": name,
-                "stix_id": stix_id,
-                "description": desc,
-                "data_source_stix_id": data_source_stix_id,
-                "data_source_name": data_source_name,
-                "data_source_attack_id": data_source_attack_id,
-                "relationships": relationships_info,
-            }
-        )
-
-    # Optional human-readable formatted output
+    # ---------- 4) formatted (optional) ----------
     formatted = ""
-    if dc_objects_for_format:
-        formatted = format_objects(
-            dc_objects_for_format,
-            include_description=include_description,
-            domain=domain,
+    if datacomponents_structured:
+        # keep it simple / readable
+        formatted_lines = []
+        for dc in datacomponents_structured:
+            ds_part = f" ({dc['data_source_name']})" if dc.get("data_source_name") else ""
+            formatted_lines.append(f"- {dc.get('name')}{ds_part}")
+        formatted = "\n".join(formatted_lines)
+
+    message = (
+        f"Found {len(datacomponents_structured)} data component(s) that can detect "
+        f"technique STIX ID '{technique_stix_id}' in domain '{domain}'."
+        if datacomponents_structured
+        else (
+            "No data components found for this technique in this ATT&CK release. "
+            "This can happen if relationship-based detection mappings are missing; "
+            "fallback may also be empty if x_mitre_data_sources is absent."
         )
+    )
 
     return {
         "technique": technique_info,
         "count": len(datacomponents_structured),
         "datacomponents": datacomponents_structured,
         "formatted": formatted,
-        "message": (
-            f"Found {len(datacomponents_structured)} data component(s) that can detect "
-            f"technique STIX ID '{technique_stix_id}' in domain '{domain}'."
-        ),
+        "message": message,
+        "debug": debug,
     }
 
 

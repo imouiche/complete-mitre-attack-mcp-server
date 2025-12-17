@@ -1,6 +1,6 @@
 [project]
 name = "mitre-mcp-server"
-version = "0.1.1"
+version = "0.1.2"
 description = "MCP server providing access to MITRE ATT&CK threat intelligence framework"
 readme = "README.md"
 requires-python = ">=3.12"
