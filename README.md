@@ -292,7 +292,6 @@ The server exposes **50+ MCP tools** covering all major MITRE ATT&CK entities an
 "Which groups target financial institutions?"
 "Show me all ransomware-related software"
 "What are the aliases for the Lazarus Group?"
-Blog demo coming soon...
 ```
 
 ### Detection Engineering
@@ -301,7 +300,6 @@ Blog demo coming soon...
 "Generate a coverage map for EDR capabilities"
 "List all techniques for Windows privilege escalation"
 "What can detect T1055 (Process Injection)?"
-Blog demo coming soon...
 ```
 
 ### Threat Hunting
@@ -310,7 +308,6 @@ Blog demo coming soon...
 "Show me lateral movement techniques for Linux"
 "Which groups use Cobalt Strike?"
 "What persistence techniques target macOS?"
-Blog demo coming soon...
 ```
 
 ### Mitigation & Defense
@@ -318,7 +315,6 @@ Blog demo coming soon...
 "What mitigations exist for phishing attacks?"
 "Show me all mitigations for privilege escalation"
 "What techniques does MFA mitigate?"
-Blog demo coming soon...
 ```
 
 ### Compliance & Gap Analysis
@@ -326,7 +322,6 @@ Blog demo coming soon...
 "Generate a layer for all techniques our EDR covers"
 "Compare APT29 TTPs against our detection capabilities"
 "Show unmitigated techniques in our environment"
-Blog demo coming soon...
 ```
 
 ---
@@ -345,6 +340,14 @@ The `generate_layer` tool produces **ATT&CK Navigator–compatible JSON**.
 3. Upload to [ATT&CK Navigator](https://mitre-attack.github.io/attack-navigator/)
 
 4. Visualize technique coverage, threat actor usage, or mitigation mapping
+
+### Real-World Example Using LangGraph
+
+- **Threat Investigation:**  
+  [Read my Medium blog demonstrating how a multi-agent LangGraph system leverages these tools to perform a real-world threat investigation.](https://medium.com/@nsangouinoussa515/from-mitre-att-ck-to-agentic-threat-investigation-58336c22f482)
+
+- **Live Demo:**  
+  [Explore the interactive Gradio 6.2 demo on Hugging Face Spaces.](https://huggingface.co/spaces/Inoussa-guru/mitre-agentic-threat-investigation)
 
 ### Example Layer Use Cases:
 
