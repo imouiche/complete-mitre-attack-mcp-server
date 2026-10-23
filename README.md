@@ -192,7 +192,7 @@ npx @imouiche/mitre-attack-mcp-server
 
 ## 🛠️ Available Tools
 
-The server exposes **50+ MCP tools** covering all major MITRE ATT&CK entities and relationships.
+The server exposes **65+ MCP tools** covering all major MITRE ATT&CK entities and relationships.
 
 ---
 
