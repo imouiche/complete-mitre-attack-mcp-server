@@ -15,7 +15,9 @@
 </div>
 
 ---
-
+<div align="center">
+ <a href="https://mcprush.com/to/imouiche-mitre-attack-mcp?ref=badge"><img width="380" height="200" src="https://mcprush.com/badge/imouiche-mitre-attack-mcp/card.svg" alt="MITRE Attack MCP server" /></a>
+</div>
 ## 🎯 Overview
 
 The **MITRE ATT&CK MCP Server** transforms the world's leading adversary knowledge base into an **AI-native interface**. Built for the **Model Context Protocol**, it enables LLMs and agentic systems to:
