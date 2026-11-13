@@ -49,17 +49,18 @@ jobs:
       # setup-node v6 performs the OIDC handshake. v4 and v5 do not support
       # trusted publishing.
       #
-      # registry-url is deliberately NOT set. Passing it makes setup-node write
-      # a temporary .npmrc containing
+      # registry-url is set, as npm's documented example does, so npm knows
+      # which registry to run the OIDC exchange against. The catch is that
+      # setup-node also writes
       #   //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
-      # and default NODE_AUTH_TOKEN to the literal placeholder
-      # XXXXX-XXXXX-XXXXX-XXXXX. npm then authenticates with that placeholder
-      # instead of performing the OIDC exchange, and the registry answers 404.
-      # With no registry-url, npm finds no credential, falls back to the
-      # default registry, and the OIDC handshake proceeds.
+      # into a temporary .npmrc and defaults NODE_AUTH_TOKEN to the literal
+      # placeholder XXXXX-XXXXX-XXXXX-XXXXX. npm then publishes with that
+      # placeholder rather than exchanging the OIDC token, and the registry
+      # answers 404. The credential line is stripped below.
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
+          registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
       # Trusted publishing needs npm 11.5.1 or newer.
@@ -82,22 +83,24 @@ jobs:
           fi
           echo "OIDC token endpoint is available."
 
-      # If a credential is configured here, npm prefers it over OIDC and the
-      # publish fails with a misleading 404. Fail loudly instead.
-      - name: Check no auth token shadows OIDC
+      # Remove the placeholder credential setup-node wrote, keeping the
+      # registry line, so npm has a registry but no token and therefore runs
+      # the OIDC exchange.
+      - name: Strip the placeholder credential
         run: |
-          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
-            echo "::error::NODE_AUTH_TOKEN is set; it would shadow the OIDC exchange."
+          RC="${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
+          echo "npm userconfig: $RC"
+          if [ -f "$RC" ]; then
+            sed -E 's/^(.*_authToken=).*/\1<redacted>/' "$RC"
+            sed -i '/_authToken/d' "$RC"
+            echo "--- after stripping ---"
+            cat "$RC"
+          fi
+          if npm config list 2>/dev/null | grep -q '_authToken'; then
+            echo "::error::An _authToken is still configured; it would shadow OIDC."
             exit 1
           fi
-          TOKEN_LINES=$(npm config list 2>/dev/null | grep -c '_authToken' || true)
-          echo "configured _authToken entries: $TOKEN_LINES"
-          if [ "$TOKEN_LINES" != "0" ]; then
-            echo "::error::An _authToken is configured; npm would use it instead of OIDC."
-            npm config list | grep '_authToken' | sed -E 's/=.*/=<redacted>/'
-            exit 1
-          fi
-          echo "No credential configured, OIDC will be used."
+          echo "No credential configured; OIDC will be used."
 
       - name: Check run.js parses
         run: node --check run.js
@@ -170,10 +173,15 @@ jobs:
       - name: Show what will be published
         run: npm publish --dry-run --access public
 
-      # No NODE_AUTH_TOKEN. setup-node v6 plus id-token:write is the whole
+      # No credential is passed. setup-node v6 plus id-token:write is the whole
       # authentication story, and npm attaches provenance automatically.
+      # NODE_AUTH_TOKEN is blanked so setup-node's placeholder cannot be picked
+      # up from the environment. Verbose logging so an OIDC failure is
+      # diagnosable rather than just "need auth".
       - name: Publish
-        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ""
+        run: npm publish --access public --loglevel verbose
 
       - name: Confirm
         run: |
