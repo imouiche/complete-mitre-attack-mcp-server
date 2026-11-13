@@ -37,21 +37,46 @@ jobs:
     runs-on: ubuntu-latest # trusted publishing does not support self-hosted runners
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # setup-node v6 performs the OIDC handshake. v4 and v5 do not support
       # trusted publishing.
+      #
+      # registry-url is deliberately NOT set. Passing it makes setup-node write
+      # a temporary .npmrc containing
+      #   //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+      # and default NODE_AUTH_TOKEN to the literal placeholder
+      # XXXXX-XXXXX-XXXXX-XXXXX. npm then authenticates with that placeholder
+      # instead of performing the OIDC exchange, and the registry answers 404.
+      # With no registry-url, npm finds no credential, falls back to the
+      # default registry, and the OIDC handshake proceeds.
       - uses: actions/setup-node@v6
         with:
-          node-version: "22"
-          registry-url: "https://registry.npmjs.org"
+          node-version: "24"
+          package-manager-cache: false
 
-      # Trusted publishing needs npm 11.5.1 or newer; the bundled npm may be
-      # older than that depending on the Node release.
+      # Trusted publishing needs npm 11.5.1 or newer.
       - name: Ensure npm supports trusted publishing
         run: |
           npm install -g npm@latest
           npm --version
+
+      # If a credential is configured here, npm prefers it over OIDC and the
+      # publish fails with a misleading 404. Fail loudly instead.
+      - name: Check no auth token shadows OIDC
+        run: |
+          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "::error::NODE_AUTH_TOKEN is set; it would shadow the OIDC exchange."
+            exit 1
+          fi
+          TOKEN_LINES=$(npm config list 2>/dev/null | grep -c '_authToken' || true)
+          echo "configured _authToken entries: $TOKEN_LINES"
+          if [ "$TOKEN_LINES" != "0" ]; then
+            echo "::error::An _authToken is configured; npm would use it instead of OIDC."
+            npm config list | grep '_authToken' | sed -E 's/=.*/=<redacted>/'
+            exit 1
+          fi
+          echo "No credential configured, OIDC will be used."
 
       - name: Check run.js parses
         run: node --check run.js
