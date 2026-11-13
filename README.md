@@ -8,8 +8,9 @@
 [![npm downloads](https://img.shields.io/npm/dm/@imouiche/mitre-attack-mcp-server.svg)](https://www.npmjs.com/package/@imouiche/mitre-attack-mcp-server)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![MCP Registry](https://img.shields.io/badge/MCP-Registered-success)](https://registry.modelcontextprotocol.io)
+[![MCPRush security rating](https://mcprush.com/badge/imouiche-mitre-attack-mcp/compact.svg)](https://mcprush.com/to/imouiche-mitre-attack-mcp?ref=badge)
 
-[Installation](#installation) · [Quick Start](#quick-start) · [Data Cache](#data-cache) · [Tools](#available-tools) · [Examples](#example-queries) · [Roadmap](#roadmap)
+[Installation](#installation) · [Quick Start](#quick-start) · [Security](#security) · [Data Cache](#data-cache) · [Tools](#available-tools) · [Examples](#example-queries) · [Roadmap](#roadmap)
 
 </div>
 
@@ -43,6 +44,7 @@ building automated security workflows.
 - [Overview](#overview)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Security](#security)
 - [Data Cache](#data-cache)
 - [MCP Registry](#mcp-registry)
 - [Available Tools](#available-tools)
@@ -150,6 +152,39 @@ Quit Claude Desktop completely (Cmd+Q on macOS) and reopen it.
 > "Generate an ATT&CK Navigator layer for ransomware groups"
 >
 > "Show me all Windows persistence techniques"
+
+---
+
+## Security
+
+<div align="center">
+
+<a href="https://mcprush.com/to/imouiche-mitre-attack-mcp?ref=badge"><img width="380" height="200" src="https://mcprush.com/badge/imouiche-mitre-attack-mcp/card.svg" alt="MITRE ATT&CK MCP Server on MCPRush: security rating A, low access, no sign-in, 65 tools, 14 compatible clients" /></a>
+
+</div>
+
+[MCPRush](https://mcprush.com/to/imouiche-mitre-attack-mcp?ref=badge) rates this
+server **security A** with **low access** scope and **no sign-in** required.
+That assessment is MCPRush's own, not an independent audit, but it reflects
+properties you can verify directly in this repository:
+
+- **No credentials.** The server reads no API keys, tokens or secrets. The only
+  environment variables it consults are the three cache-location overrides
+  documented above.
+- **Narrow network scope.** The sole outbound request is the ATT&CK STIX
+  download, performed by MITRE's own `mitreattack-python` library. There are no
+  telemetry, analytics or third-party calls.
+- **Integrity-checked data.** Downloads are verified against the expected hash
+  published in MITRE's release manifest, so a corrupted or substituted bundle
+  is rejected rather than loaded.
+- **Local execution.** The server runs as a local stdio process. It opens no
+  listening port and exposes no HTTP surface.
+- **Read-only behaviour.** All 65 tools are queries over the cached STIX data.
+  Nothing mutates state outside the cache directory, and no tool executes shell
+  commands or evaluates caller-supplied code.
+
+Found a security issue? Please
+[open an issue](https://github.com/imouiche/complete-mitre-attack-mcp-server/issues).
 
 ---
 
@@ -541,8 +576,6 @@ This project is not affiliated with or endorsed by The MITRE Corporation.
 ---
 
 <div align="center">
-
-<a href="https://mcprush.com/to/imouiche-mitre-attack-mcp?ref=badge"><img width="304" height="160" src="https://mcprush.com/badge/imouiche-mitre-attack-mcp/card.svg" alt="MITRE ATT&CK MCP server on MCPRush" /></a>
 
 If this project is useful to you, consider starring the repository.
 
