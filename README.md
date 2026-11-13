@@ -98,6 +98,27 @@ npm install -g @imouiche/mitre-attack-mcp-server
 npx @imouiche/mitre-attack-mcp-server
 ```
 
+> **First run takes several minutes.** The npm package ships the Python source,
+> not the Python dependencies. On first launch it creates a private virtualenv
+> under `~/.mitre-mcp-server/runtime/`, installs the pinned dependencies into
+> it, and downloads the ATT&CK STIX data (~120MB). Later runs start in seconds.
+>
+> Because some MCP clients time out waiting for a server to speak, warm the
+> cache once from a terminal before configuring the client:
+>
+> ```bash
+> npx -y @imouiche/mitre-attack-mcp-server --setup
+> ```
+>
+> Python 3.12+ must be on PATH. `uv` is used when present, `venv` + `pip`
+> otherwise. Nothing is installed into your system or active Python
+> environment.
+>
+> To use an interpreter you manage yourself, point `MITRE_MCP_PYTHON` at it and
+> no virtualenv is created — it must already satisfy the dependencies in
+> `pyproject.toml`, including **`mcp<2`**. `MITRE_MCP_RUNTIME_DIR` moves the
+> cached virtualenv elsewhere.
+
 
 ### Via uv (Modern Python)
 ```bash
@@ -391,8 +412,13 @@ The `generate_layer` tool produces **ATT&CK Navigator–compatible JSON**.
 
 - **Python**: 3.12 or higher
 - **Node.js**: 16+ (for NPM installation)
-- **Disk Space**: ~150MB (includes dependencies + data)
+- **Disk Space**: ~150MB (dependencies + ATT&CK data). The npm install path
+  adds its own virtualenv under `~/.mitre-mcp-server/runtime/`, so budget
+  ~450MB there.
 - **Memory**: ~200MB RAM when running
+- **`mcp` version**: pinned to `>=1.1.0,<2`. The server uses the v1
+  `mcp.server.fastmcp` API, which mcp 2.0 renamed to `MCPServer`; an
+  unpinned install resolves 2.x and fails at import.
 
 ---
 
