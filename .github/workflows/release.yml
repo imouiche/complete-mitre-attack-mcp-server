@@ -36,6 +36,13 @@ jobs:
   release:
     runs-on: ubuntu-latest # trusted publishing does not support self-hosted runners
 
+    # Declared at job level as well as workflow level. The first attempt was
+    # granted only "Contents: read, Metadata: read" despite the workflow-level
+    # block, leaving npm with no OIDC token to exchange.
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
       - uses: actions/checkout@v6
 
@@ -60,6 +67,20 @@ jobs:
         run: |
           npm install -g npm@latest
           npm --version
+
+      # OIDC needs these two variables, which Actions injects only when the job
+      # really holds id-token: write. Without them npm cannot exchange a token
+      # and fails with ENEEDAUTH, which reads like a missing secret rather than
+      # a missing permission.
+      - name: Check the OIDC token is available
+        run: |
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+            echo "::error::No OIDC token available. The job did not receive id-token: write."
+            echo "ACTIONS_ID_TOKEN_REQUEST_URL set: $([ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] && echo yes || echo no)"
+            echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN set: $([ -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ] && echo yes || echo no)"
+            exit 1
+          fi
+          echo "OIDC token endpoint is available."
 
       # If a credential is configured here, npm prefers it over OIDC and the
       # publish fails with a misleading 404. Fail loudly instead.
