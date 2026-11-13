@@ -2,8 +2,11 @@
 
 # MITRE ATT&CK MCP Server
 
-**Machine-callable access to the MITRE ATT&CK knowledge base for LLMs and agentic systems**
+**65 MCP tools giving LLMs and agentic systems machine-callable access to the MITRE ATT&CK knowledge base**
 
+[![MCP tools](https://img.shields.io/badge/MCP%20tools-65-0b7285)](#available-tools)
+[![Domains](https://img.shields.io/badge/domains-Enterprise%20%7C%20Mobile%20%7C%20ICS-0b7285)](#available-tools)
+[![ATT&CK](https://img.shields.io/badge/ATT%26CK-v20.1-1864ab)](#data-cache)
 [![npm](https://img.shields.io/npm/v/@imouiche/mitre-attack-mcp-server.svg)](https://www.npmjs.com/package/@imouiche/mitre-attack-mcp-server)
 [![npm downloads](https://img.shields.io/npm/dm/@imouiche/mitre-attack-mcp-server.svg)](https://www.npmjs.com/package/@imouiche/mitre-attack-mcp-server)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
@@ -27,10 +30,23 @@ It reads the official STIX 2.1 bundles published by MITRE through the
 `mitreattack-python` library. No scraping, no third-party API, no
 reverse-engineered endpoints.
 
-65 tools cover the Enterprise, Mobile and ICS domains: entity lookup and
-search, relationship traversal (which groups use a technique, which software a
-campaign deployed, what mitigates what), and ATT&CK Navigator layer generation
-for coverage and gap visualisation. All output is shaped for LLM consumption.
+### 65 tools across three domains
+
+| Area | Tools | Covers |
+|---|---:|---|
+| [Tactics, data sources and ICS](#tactics-data-sources-and-ics) | 12 | tactics, data components and what they detect, ICS assets, procedure examples |
+| [Techniques](#techniques) | 11 | lookup by ATT&CK ID, keyword search, parent and sub-technique traversal, platform and tactic filters |
+| [Generic STIX access](#generic-stix-access) | 10 | any object by STIX or ATT&CK ID, description search, created and modified filters, ID to name resolution |
+| [Groups](#groups) | 10 | threat actors, aliases, the techniques and software they use, campaign attribution |
+| [Software](#software) | 8 | malware and tools, aliases, the techniques they implement, who deploys them |
+| [Campaigns](#campaigns) | 6 | campaigns, aliases, their techniques and software, attribution to groups |
+| [Infrastructure and metadata](#infrastructure-and-metadata) | 5 | data status, entity counts, matrices, Navigator layer generation |
+| [Mitigations](#mitigations) | 3 | mitigations and the techniques they address |
+
+Covering **Enterprise, Mobile and ICS**, with relationship traversal throughout
+— which groups use a technique, which software a campaign deployed, what
+mitigates what — plus ATT&CK Navigator layer generation for coverage and gap
+visualisation. All output is shaped for LLM consumption.
 
 Registered in the official MCP Registry as
 `io.github.imouiche/mitre-attack-mcp-server`.

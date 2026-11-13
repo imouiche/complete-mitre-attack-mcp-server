@@ -164,11 +164,19 @@ jobs:
           import asyncio
           from mitre_mcp_server.server import mcp
           tools = asyncio.run(mcp.list_tools())
-          assert len(tools) == 65, f"expected 65 tools, got {len(tools)}"
+          assert tools, "no tools registered"
           missing = [t.name for t in tools if not (t.description or "").strip()]
           assert not missing, f"tools without descriptions: {missing}"
-          print(f"{len(tools)} tools registered, all documented")
+          print(f"{len(tools)} tools registered, all with descriptions")
           PY
+
+      # The tool count is advertised in the README tagline, a badge, a section
+      # heading and a per-area table. Checking it against the registered tools
+      # rather than hardcoding a number here means adding a tool fails the
+      # release until the README is updated, instead of quietly making the
+      # headline figure wrong.
+      - name: Check the README tool counts match the code
+        run: PYTHONPATH=src /tmp/verify/bin/python scripts/check_tool_counts.py
 
       - name: Show what will be published
         run: npm publish --dry-run --access public
