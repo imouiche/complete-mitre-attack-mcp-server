@@ -1,162 +1,132 @@
 <div align="center">
 
-# 🛡️ MITRE ATT&CK MCP Server
+# MITRE ATT&CK MCP Server
 
-**AI-Native Access to the World's Leading Threat Intelligence Framework**
+**Machine-callable access to the MITRE ATT&CK knowledge base for LLMs and agentic systems**
 
 [![npm](https://img.shields.io/npm/v/@imouiche/mitre-attack-mcp-server.svg)](https://www.npmjs.com/package/@imouiche/mitre-attack-mcp-server)
 [![npm downloads](https://img.shields.io/npm/dm/@imouiche/mitre-attack-mcp-server.svg)](https://www.npmjs.com/package/@imouiche/mitre-attack-mcp-server)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![MCP Registry](https://img.shields.io/badge/MCP-Registered-success)](https://registry.modelcontextprotocol.io)
-[![GitHub release](https://img.shields.io/github/v/release/imouiche/complete-mitre-attack-mcp-server)](https://github.com/imouiche/complete-mitre-attack-mcp-server/releases)
 
-[Features](#-key-features) • [Installation](#-installation) • [Quick Start](#-quick-start) • [Tools](#-available-tools) • [Examples](#-example-queries) • [Roadmap](#-roadmap--vision)
+[Installation](#installation) · [Quick Start](#quick-start) · [Data Cache](#data-cache) · [Tools](#available-tools) · [Examples](#example-queries) · [Roadmap](#roadmap)
 
 </div>
 
 ---
-<div align="center">
- <a href="https://mcprush.com/to/imouiche-mitre-attack-mcp?ref=badge"><img width="380" height="200" src="https://mcprush.com/badge/imouiche-mitre-attack-mcp/card.svg" alt="MITRE Attack MCP server" /></a>
-</div>
-## 🎯 Overview
 
-The **MITRE ATT&CK MCP Server** transforms the world's leading adversary knowledge base into an **AI-native interface**. Built for the **Model Context Protocol**, it enables LLMs and agentic systems to:
+## Overview
 
-- 🔍 **Query** 200+ techniques, 140+ groups, 700+ software entries
-- 🧠 **Reason** over complex threat relationships and TTPs  
-- 📊 **Visualize** coverage gaps with ATT&CK Navigator layers
-- ⚡ **Scale** threat intelligence workflows with structured tools
+The MITRE ATT&CK MCP Server exposes the MITRE ATT&CK framework over the Model
+Context Protocol, giving LLMs and agentic systems structured, machine-callable
+access to adversary tactics, techniques, threat groups, software, campaigns and
+mitigations.
 
-**Perfect for**: Security teams, threat hunters, detection engineers, AI researchers, and anyone building intelligent security systems.
+It reads the official STIX 2.1 bundles published by MITRE through the
+`mitreattack-python` library. No scraping, no third-party API, no
+reverse-engineered endpoints.
 
-### What is this?
+Built for security teams, threat hunters, detection engineers and researchers
+building automated security workflows.
 
-`mitre-attack-mcp-server` is a **self-contained MCP server** that provides **machine-callable access** to the MITRE ATT&CK framework using official STIX data with **LLMs** friendly **structured outputs**.
+### Capabilities
 
-It enables:
+- Query techniques, groups, software, campaigns, mitigations and data sources
+  across the Enterprise, Mobile and ICS domains
+- Traverse ATT&CK relationships: which groups use a technique, which software a
+  campaign deployed, what mitigates what
+- Generate ATT&CK Navigator layers for coverage and gap visualisation
+- Return structured output shaped for LLM consumption
 
-- 🤖 **LLMs** to reason about ATT&CK techniques, groups, software, and mitigations
-- 🧠 **Agentic workflows** to generate threat explanations and coverage maps
-- 🔍 **Security teams** to query ATT&CK relationships programmatically
-- 📊 **Visualization** via ATT&CK Navigator layers
+### Contents
 
-No scraping.  
-No fragile APIs.  
-Just **official MITRE data**, structured and reliable.
-
----
-
-## 📑 Table of Contents
-
-- [Overview](#-overview)
-- [Key Features](#-key-features)
-- [Installation](#-installation)
-- [Quick Start](#-quick-start)
-- [MCP Registry](#-mcp-registry)
-- [Available Tools](#-available-tools)
-- [Example Queries](#-example-queries)
-- [ATT&CK Navigator](#-attck-navigator-visualization)
-- [Technical Details](#-technical-details)
-- [Roadmap & Vision](#-roadmap--vision)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [About the Author](#-about-the-author)
-- [Acknowledgments](#-acknowledgments)
+- [Overview](#overview)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Data Cache](#data-cache)
+- [MCP Registry](#mcp-registry)
+- [Available Tools](#available-tools)
+- [Example Queries](#example-queries)
+- [ATT&CK Navigator](#attck-navigator-visualisation)
+- [Technical Details](#technical-details)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+- [Author](#author)
+- [Acknowledgments](#acknowledgments)
 
 ---
 
-## ✨ Key Features
+## Installation
 
-- ✅ **65+ MCP tools** across ATT&CK domains (Enterprise, Mobile, ICS)
-- ✅ Automatic **STIX download & caching** on first run
-- ✅ Native **ATT&CK Navigator layer generation**
-- ✅ Designed for **LLMs & MCP-compatible clients**
-- ✅ **In-memory caching** for instant query responses
-- ✅ **Type-safe** with Pydantic models
-- ✅ Clean, production-ready, self-contained server
-- ✅ Comprehensive test coverage
-
----
-
-## 📦 Installation
-
-### Via PyPI  (recommended) - Python Users
+### Python (PyPI)
 
 ```bash
 pip install mitre-mcp-server
 ```
 
-### npm
+Or with uv:
+
+```bash
+uv pip install mitre-mcp-server
+```
+
+### Node (npm)
 
 ```bash
 npm install -g @imouiche/mitre-attack-mcp-server
 ```
 
-### npx (no installation required)
+Or without installing:
 
 ```bash
-npx @imouiche/mitre-attack-mcp-server
+npx -y @imouiche/mitre-attack-mcp-server
 ```
 
-> **First run takes several minutes.** The npm package ships the Python source,
-> not the Python dependencies. On first launch it creates a private virtualenv
-> under `~/.mitre-mcp-server/runtime/`, installs the pinned dependencies into
-> it, and downloads the ATT&CK STIX data (~120MB). Later runs start in seconds.
+> **The npm package needs a few minutes on first run.** It ships the Python
+> source, not the Python dependencies. On first launch it creates a private
+> virtualenv under `~/.mitre-mcp-server/runtime/`, installs the pinned
+> dependencies into it, and downloads the ATT&CK STIX data. Subsequent runs
+> start in a few seconds.
 >
-> Because some MCP clients time out waiting for a server to speak, warm the
-> cache once from a terminal before configuring the client:
+> Some MCP clients time out waiting for a server to respond, so warm the cache
+> once from a terminal before configuring your client:
 >
 > ```bash
 > npx -y @imouiche/mitre-attack-mcp-server --setup
 > ```
 >
-> Python 3.12+ must be on PATH. `uv` is used when present, `venv` + `pip`
-> otherwise. Nothing is installed into your system or active Python
-> environment.
->
-> To use an interpreter you manage yourself, point `MITRE_MCP_PYTHON` at it and
-> no virtualenv is created — it must already satisfy the dependencies in
-> `pyproject.toml`, including **`mcp<2`**. `MITRE_MCP_RUNTIME_DIR` moves the
-> cached virtualenv elsewhere.
+> Python 3.12 or newer must be on `PATH`. `uv` is used when available and
+> `venv` plus `pip` otherwise. Nothing is installed into your system or
+> currently active Python environment.
 
+#### npm environment variables
 
-### Via uv (Modern Python)
-```bash
-uv pip install mitre-mcp-server
-```
+| Variable | Effect |
+|---|---|
+| `MITRE_MCP_PYTHON` | Use this interpreter directly and skip virtualenv creation entirely. It must already satisfy the dependencies in `pyproject.toml`, including `mcp<2`. |
+| `MITRE_MCP_RUNTIME_DIR` | Relocate the cached virtualenv. Default `~/.mitre-mcp-server/runtime/`. |
+| `MITRE_MCP_DATA_DIR` | Relocate the ATT&CK data cache. Default `~/.mitre-mcp-server/data/`. |
 
-### Local Development
-
-```bash
-git clone https://github.com/imouiche/complete-mitre-attack-mcp-server.git
-cd complete-mitre-attack-mcp-server
-npm install
-```
-
-### Using uv (Python package manager)
+### From source
 
 ```bash
 git clone https://github.com/imouiche/complete-mitre-attack-mcp-server.git
 cd complete-mitre-attack-mcp-server
 uv sync
+uv run python -m mitre_mcp_server.server
 ```
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
-### 1. Install
+### 1. Configure your client
 
-```bash
-pip install mitre-mcp-server
-```
+Add the server to `claude_desktop_config.json`:
 
-### 2. Configure Claude Desktop
-
-Add to your `claude_desktop_config.json`:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS** — `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows** — `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
@@ -169,122 +139,170 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-### 3. Restart Claude Desktop
+### 2. Restart the client
 
 Quit Claude Desktop completely (Cmd+Q on macOS) and reopen it.
 
-### 4. Start Querying!
+### 3. Query
 
-Ask Claude:
-> "What techniques does APT29 use for initial access?"  
-> "Generate an ATT&CK Navigator layer for ransomware groups"  
+> "What techniques does APT29 use for initial access?"
+>
+> "Generate an ATT&CK Navigator layer for ransomware groups"
+>
 > "Show me all Windows persistence techniques"
 
-**Data downloads automatically on first run** (~59MB, cached at `~/.mitre-mcp-server/data/`).
-
 ---
 
-## 📦 MCP Registry
+## Data Cache
 
-This server is officially registered in the **Model Context Protocol (MCP) Registry**.
+The server does not bundle ATT&CK data. On first start it downloads the
+official STIX 2.1 bundles for all three domains and caches them on disk, then
+loads them into memory. Later starts reuse the cache and skip the download.
 
-**Registry ID**: `io.github.imouiche/mitre-attack-mcp-server`
+**Location** — `~/.mitre-mcp-server/data/v{version}/`, overridable with
+`MITRE_MCP_DATA_DIR`.
 
-**View in Official Registry**: [https://registry.modelcontextprotocol.io/?q=mitre-attack-mcp-server](https://registry.modelcontextprotocol.io/?q=mitre-attack-mcp-server)
+**Current release** — ATT&CK v20.1, about 64MB across three files:
 
-### Installation Options
+| Domain | File | Size |
+|---|---|---|
+| Enterprise | `enterprise-attack.json` | 52.7MB |
+| Mobile | `mobile-attack.json` | 5.9MB |
+| ICS | `ics-attack.json` | 5.1MB |
 
-**Option 1: Direct NPM**
+### Clearing the cache to force a re-download
+
+The cache is never invalidated automatically. If the data is stale, partially
+downloaded, or corrupted, clear it and the server will fetch a fresh copy the
+next time it starts.
+
+Inspect what is currently cached:
+
 ```bash
-npm install -g @imouiche/mitre-attack-mcp-server
+python -m mitre_mcp_server.data.download --stats
 ```
 
-**Option 2: NPX (no installation)**
+Re-download the current release, replacing what is there:
+
 ```bash
-npx @imouiche/mitre-attack-mcp-server
+python -m mitre_mcp_server.data.download --force
 ```
 
-**Option 3: Discover via Registry**
-1. Visit [MCP Registry](https://registry.modelcontextprotocol.io)
-2. Search for "mitre-attack"
-3. Click the server card for installation instructions
+Or simply delete the cache and let the server re-fetch on next start. This is
+the most reliable method and the one to use with the npm install, which has no
+convenient `python` on `PATH`:
+
+```bash
+rm -rf ~/.mitre-mcp-server/data
+```
+
+To refresh a single domain rather than all three:
+
+```bash
+python -m mitre_mcp_server.data.download --domain enterprise --force
+```
+
+### Reclaiming disk space from superseded releases
+
+When MITRE publishes a new ATT&CK version, the server downloads it into a new
+`v{version}` directory and **leaves the previous one in place**. Over time
+these accumulate — a machine that has run through two releases will hold both:
+
+```
+~/.mitre-mcp-server/data/
+├── v18.1/   56MB   <- superseded, safe to delete
+└── v20.1/   64MB   <- in use
+```
+
+Only the directory matching the current `mitreattack-python` release is read.
+Delete the others:
+
+```bash
+ls ~/.mitre-mcp-server/data/                 # list cached releases
+python -m mitre_mcp_server.data.download --stats   # show which one is in use
+rm -rf ~/.mitre-mcp-server/data/v18.1        # remove a superseded release
+```
+
+The npm install path keeps a second cache, the virtualenv under
+`~/.mitre-mcp-server/runtime/`. It is keyed by package and Python version, so
+upgrades create a new directory and leave the old one behind. Removing the
+whole `runtime` directory is safe; it is rebuilt on the next launch.
 
 ---
 
-## 🛠️ Available Tools
+## MCP Registry
 
-The server exposes **65+ MCP tools** covering all major MITRE ATT&CK entities and relationships.
+This server is registered in the official Model Context Protocol Registry.
+
+**Registry ID** — `io.github.imouiche/mitre-attack-mcp-server`
+
+**Listing** — [registry.modelcontextprotocol.io](https://registry.modelcontextprotocol.io/?q=mitre-attack-mcp-server)
 
 ---
 
-### 📊 Infrastructure & Metadata
+## Available Tools
+
+65 tools covering the major ATT&CK entities and their relationships. All tool
+handlers are asynchronous.
+
+### Infrastructure and metadata
 
 | Tool | Description |
 |---|---|
-| `get_data_stats` | Show download status, file paths, sizes, and ATT&CK release version |
-| `generate_layer` | Generate an ATT&CK Navigator layer (JSON output) |
-| `get_layer_metadata` | Return Navigator layer metadata template |
+| `get_data_stats` | Download status, file paths, sizes and ATT&CK release version |
+| `generate_layer` | Generate an ATT&CK Navigator layer as JSON |
+| `get_layer_metadata` | Return a Navigator layer metadata template |
 
----
-
-### 🎯 Techniques
+### Techniques
 
 | Tool | Description |
 |---|---|
-| `get_technique_by_id` | Get a technique by ATT&CK ID (e.g., T1055) |
+| `get_technique_by_id` | Get a technique by ATT&CK ID, for example T1055 |
 | `search_techniques` | Search techniques by name or description |
 | `get_all_techniques` | Retrieve all techniques |
 | `get_all_parent_techniques` | Parent techniques only |
-| `get_all_subtechniques` | All subtechniques |
-| `get_subtechniques_of_technique` | Subtechniques of a parent |
-| `get_parent_technique_of_subtechnique` | Parent of a subtechnique |
+| `get_all_subtechniques` | All sub-techniques |
+| `get_subtechniques_of_technique` | Sub-techniques of a parent |
+| `get_parent_technique_of_subtechnique` | Parent of a sub-technique |
 | `get_technique_tactics` | Tactics associated with a technique |
 | `get_techniques_by_tactic` | Techniques under a tactic |
 | `get_techniques_by_platform` | Techniques for a platform |
 | `get_revoked_techniques` | Revoked techniques |
 
----
-
-### 🧑‍💻 Groups (Threat Actors)
+### Groups
 
 | Tool | Description |
 |---|---|
-| `get_group_by_name` | Find group by name or alias |
+| `get_group_by_name` | Find a group by name or alias |
 | `search_groups` | Search groups |
 | `get_all_groups` | All ATT&CK groups |
-| `get_groups_by_alias` | Lookup groups by alias |
+| `get_groups_by_alias` | Look up groups by alias |
 | `get_groups_using_technique` | Groups using a technique |
 | `get_groups_using_software` | Groups using software |
 | `get_groups_attributing_to_campaign` | Groups attributed to a campaign |
 
----
-
-### 🧪 Software (Malware & Tools)
+### Software
 
 | Tool | Description |
 |---|---|
 | `get_software` | Get all software |
 | `search_software` | Search software |
-| `get_software_by_alias` | Lookup software by alias |
+| `get_software_by_alias` | Look up software by alias |
 | `get_software_used_by_group` | Software used by a group |
 | `get_software_used_by_campaign` | Software used in campaigns |
 | `get_software_using_technique` | Software using a technique |
 
----
-
-### 📌 Campaigns
+### Campaigns
 
 | Tool | Description |
 |---|---|
 | `get_all_campaigns` | Get all campaigns |
-| `get_campaigns_by_alias` | Lookup campaigns by alias |
+| `get_campaigns_by_alias` | Look up campaigns by alias |
 | `get_campaigns_using_technique` | Campaigns using a technique |
 | `get_campaigns_using_software` | Campaigns using software |
 | `get_campaigns_attributed_to_group` | Campaign attribution |
 
----
-
-### 🛡️ Mitigations
+### Mitigations
 
 | Tool | Description |
 |---|---|
@@ -292,9 +310,7 @@ The server exposes **65+ MCP tools** covering all major MITRE ATT&CK entities an
 | `get_mitigations_mitigating_technique` | Mitigations for a technique |
 | `get_techniques_mitigated_by_mitigation` | Techniques mitigated by a mitigation |
 
----
-
-### 🧭 Tactics, Data Sources & ICS
+### Tactics, data sources and ICS
 
 | Tool | Description |
 |---|---|
@@ -305,244 +321,231 @@ The server exposes **65+ MCP tools** covering all major MITRE ATT&CK entities an
 | `get_all_assets` | Get ICS assets |
 | `get_assets_targeted_by_technique` | Assets targeted by a technique |
 
----
-
-## 💡 Example Queries
-
-### Threat Intelligence
-```
-"What techniques does APT29 use for initial access?"
-"Which groups target financial institutions?"
-"Show me all ransomware-related software"
-"What are the aliases for the Lazarus Group?"
-```
-
-### Detection Engineering
-```
-"What data sources detect credential dumping?"
-"Generate a coverage map for EDR capabilities"
-"List all techniques for Windows privilege escalation"
-"What can detect T1055 (Process Injection)?"
-```
-
-### Threat Hunting
-```
-"What techniques use PowerShell?"
-"Show me lateral movement techniques for Linux"
-"Which groups use Cobalt Strike?"
-"What persistence techniques target macOS?"
-```
-
-### Mitigation & Defense
-```
-"What mitigations exist for phishing attacks?"
-"Show me all mitigations for privilege escalation"
-"What techniques does MFA mitigate?"
-```
-
-### Compliance & Gap Analysis
-```
-"Generate a layer for all techniques our EDR covers"
-"Compare APT29 TTPs against our detection capabilities"
-"Show unmitigated techniques in our environment"
-```
+Most tools accept an optional `domain` argument of `enterprise`, `mobile` or
+`ics`, defaulting to `enterprise`.
 
 ---
 
-## 📊 ATT&CK Navigator Visualization
+## Example Queries
 
-The `generate_layer` tool produces **ATT&CK Navigator–compatible JSON**.
+### Threat intelligence
 
-### Usage:
+```
+What techniques does APT29 use for initial access?
+Which groups target financial institutions?
+Show me all ransomware-related software
+What are the aliases for the Lazarus Group?
+```
 
-1. Ask Claude to generate a layer:
-   > "Generate an ATT&CK Navigator layer for all techniques used by APT29"
+### Detection engineering
 
-2. Save the JSON output to a file (e.g., `apt29_layer.json`)
+```
+What data sources detect credential dumping?
+Generate a coverage map for EDR capabilities
+List all techniques for Windows privilege escalation
+What can detect T1055 (Process Injection)?
+```
 
-3. Upload to [ATT&CK Navigator](https://mitre-attack.github.io/attack-navigator/)
+### Threat hunting
 
-4. Visualize technique coverage, threat actor usage, or mitigation mapping
+```
+What techniques use PowerShell?
+Show me lateral movement techniques for Linux
+Which groups use Cobalt Strike?
+What persistence techniques target macOS?
+```
 
-### Real-World Example Using LangGraph
+### Mitigation and defence
 
-- **Threat Investigation:**  
-  [Read my Medium blog demonstrating how a multi-agent LangGraph system leverages these tools to perform a real-world threat investigation.](https://medium.com/@nsangouinoussa515/from-mitre-att-ck-to-agentic-threat-investigation-58336c22f482)
+```
+What mitigations exist for phishing attacks?
+Show me all mitigations for privilege escalation
+What techniques does MFA mitigate?
+```
 
-- **Live Demo:**  
-  [Explore the interactive Gradio 6.2 demo on Hugging Face Spaces.](https://huggingface.co/spaces/Inoussa-guru/mitre-agentic-threat-investigation)
+### Gap analysis
 
-### Example Layer Use Cases:
-
-- **Red Team Coverage**: Map all techniques used in an exercise
-- **Detection Gaps**: Highlight unmonitored techniques
-- **Threat Actor Profile**: Visualize group TTPs
-- **Mitigation Coverage**: Show what's protected vs. exposed
+```
+Generate a layer for all techniques our EDR covers
+Compare APT29 TTPs against our detection capabilities
+Show unmitigated techniques in our environment
+```
 
 ---
 
-## 🔧 Technical Details
+## ATT&CK Navigator Visualisation
+
+The `generate_layer` tool produces ATT&CK Navigator-compatible JSON.
+
+1. Ask your client to generate a layer, for example "Generate an ATT&CK
+   Navigator layer for all techniques used by APT29"
+2. Save the JSON output to a file, for example `apt29_layer.json`
+3. Upload it to [ATT&CK Navigator](https://mitre-attack.github.io/attack-navigator/)
+
+Typical uses include mapping red-team exercise coverage, highlighting
+unmonitored techniques, profiling a threat actor's TTPs, and showing which
+techniques are mitigated against which are exposed.
+
+### Worked example with LangGraph
+
+- **Article** — [From MITRE ATT&CK to agentic threat investigation](https://medium.com/@nsangouinoussa515/from-mitre-att-ck-to-agentic-threat-investigation-58336c22f482),
+  on building a multi-agent LangGraph system over these tools
+- **Live demo** — [Interactive Gradio demo on Hugging Face Spaces](https://huggingface.co/spaces/Inoussa-guru/mitre-agentic-threat-investigation)
+
+---
+
+## Technical Details
 
 ### Architecture
 
-- **Language**: Python 3.12+
-- **Framework**: FastMCP for Model Context Protocol
-- **Data Library**: Official `mitreattack-python` (v5.3.0+)
-- **Async/Await**: Optimal performance for concurrent queries
-- **Type Safety**: Full Pydantic models for all data structures
-- **Testing**: Comprehensive pytest coverage
+- **Language** — Python 3.12 or newer
+- **Protocol** — Model Context Protocol via FastMCP, served over stdio
+- **Data source** — official STIX 2.1 bundles through `mitreattack-python`
+- **Concurrency** — asynchronous tool handlers
+- **Caching** — all three domains loaded into memory at startup, so queries
+  need no disk access
 
 ### Data
 
-- **Enterprise ATT&CK**: v18.1+ (~50.9MB)
-- **Mobile ATT&CK**: v18.1+ (~4.9MB)
-- **ICS ATT&CK**: v18.1+ (~3.5MB)
-- **Total**: ~59MB cached locally
-- **Storage**: `~/.mitre-mcp-server/data/v{version}/`
-- **Update**: Auto-downloads on install, uses cached data on subsequent runs
+| Property | Value |
+|---|---|
+| ATT&CK release | v20.1 |
+| Domains | Enterprise, Mobile, ICS |
+| Techniques | 706 Enterprise, 125 Mobile, 104 ICS |
+| Groups | 178 Enterprise, 20 Mobile, 14 ICS |
+| Software | 842 Enterprise, 129 Mobile, 25 ICS |
+| Mitigations | 44 Enterprise, 13 Mobile, 53 ICS |
+| Tactics | 15 Enterprise, 12 Mobile, 12 ICS |
+| Cache size | about 64MB |
+| Cache location | `~/.mitre-mcp-server/data/v{version}/` |
 
-### Performance
-
-- **In-memory caching**: All domains loaded at startup
-- **Query speed**: Sub-second for most operations
-- **Graph traversal**: Efficient relationship queries
-- **Concurrent**: Handles multiple simultaneous requests
+Counts track the pinned ATT&CK release and change when MITRE publishes a new
+one. See [Data Cache](#data-cache) for refreshing.
 
 ### Requirements
 
-- **Python**: 3.12 or higher
-- **Node.js**: 16+ (for NPM installation)
-- **Disk Space**: ~150MB (dependencies + ATT&CK data). The npm install path
-  adds its own virtualenv under `~/.mitre-mcp-server/runtime/`, so budget
-  ~450MB there.
-- **Memory**: ~200MB RAM when running
-- **`mcp` version**: pinned to `>=1.1.0,<2`. The server uses the v1
-  `mcp.server.fastmcp` API, which mcp 2.0 renamed to `MCPServer`; an
-  unpinned install resolves 2.x and fails at import.
+- **Python** — 3.12 or newer
+- **Node.js** — 16 or newer, for the npm installation path only
+- **Disk** — about 64MB of ATT&CK data plus about 200MB of Python
+  dependencies. The npm path keeps its dependencies in its own virtualenv, so
+  budget roughly 290MB under `~/.mitre-mcp-server/`.
+- **Memory** — about 490MB resident with all three domains loaded, since every
+  domain is held in memory for fast queries. Measured on Python 3.12 against
+  ATT&CK v20.1.
+- **`mcp`** — pinned to `>=1.1.0,<2`. The server uses the v1
+  `mcp.server.fastmcp` API, which mcp 2.0 renamed to `MCPServer`. An unpinned
+  install resolves 2.x and fails at import.
 
 ---
 
-## 🚀 Roadmap & Vision
+## Roadmap
 
-This project is the **first component** of a larger vision to build **comprehensive agentic security automation** by integrating multiple security knowledge bases and frameworks.
+This server is the first component of a broader effort to make security
+knowledge bases directly available to agentic systems.
 
-### Current Status
-- ✅ **MITRE ATT&CK** - Threat intelligence & adversary TTPs (v18.1)
+**Available**
 
-### Planned Integrations
-- 🔜 **CVE/NVD** - Vulnerability intelligence and exploit mapping
-- 🔜 **MITRE D3FEND** - Defensive countermeasure knowledge graph
-- 🔜 **Sigma Rules** - Detection rule translation and management
-- 🔜 **CAPEC** - Common Attack Pattern Enumeration
-- 🔜 **CWE** - Software weakness enumeration
-- 🔜 **Agentic Pentesting** - Multi-agent autonomous security testing
+- MITRE ATT&CK — adversary tactics, techniques and threat intelligence
 
-### Ultimate Goal
+**Planned**
 
-Enable **AI agents to autonomously**:
-- 🎯 Map attack surfaces and identify vulnerabilities
-- 🛡️ Recommend defensive countermeasures
-- 🔍 Generate detection rules and validate coverage
-- 🤖 Orchestrate multi-stage security assessments
-- 📊 Reason about complete attack-defense lifecycles
+- MITRE ATLAS — adversarial threat landscape for AI systems
+- CVE/NVD — vulnerability intelligence and exploit mapping
+- MITRE D3FEND — defensive countermeasure knowledge graph
+- Sigma — detection rule translation and management
+- CAPEC — common attack pattern enumeration
+- CWE — software weakness enumeration
 
-### Get Involved
+The longer-term goal is to let AI agents map attack surfaces, recommend
+countermeasures, generate and validate detection coverage, and reason across
+the full attack and defence lifecycle.
 
-**We welcome contributions from:**
-- 🎓 **Students** working on thesis projects (cybersecurity, AI, agentic systems)
-- 🔬 **Researchers** in AI security, threat intelligence, or agent frameworks
-- 💻 **Developers** passionate about security automation
-- 🏢 **Organizations** interested in research partnerships or commercial applications
+### Collaboration
 
-**Areas of Interest:**
-- Integrating additional security frameworks (CVE, D3FEND, Sigma)
-- Building agentic workflows for pentesting and red teaming
-- Developing detection rule generation pipelines
-- Creating threat intelligence reasoning systems
-- Improving MCP tooling and documentation
+Contributions are welcome, particularly from students working on cybersecurity,
+AI or agentic-systems theses, researchers in AI security and threat
+intelligence, developers interested in security automation, and organisations
+exploring research partnerships.
 
-📬 **Interested?** Open an issue, start a discussion, or reach out directly!
+Areas of active interest:
 
-[Join the Discussion →](https://github.com/imouiche/complete-mitre-attack-mcp-server/discussions)
+- Integrating additional security frameworks
+- Agentic workflows for pentesting and red teaming
+- Detection rule generation pipelines
+- Threat intelligence reasoning systems
+- MCP tooling and documentation
+
+[Join the discussion](https://github.com/imouiche/complete-mitre-attack-mcp-server/discussions)
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
-Found a bug? Have a feature request? Want to contribute to the roadmap?
+- [Report an issue](https://github.com/imouiche/complete-mitre-attack-mcp-server/issues)
+- [Request a feature](https://github.com/imouiche/complete-mitre-attack-mcp-server/issues/new)
+- [Open a pull request](https://github.com/imouiche/complete-mitre-attack-mcp-server/pulls)
+- [Start a discussion](https://github.com/imouiche/complete-mitre-attack-mcp-server/discussions)
 
-- 🐛 [Report Issues](https://github.com/imouiche/complete-mitre-attack-mcp-server/issues)
-- 💡 [Request Features](https://github.com/imouiche/complete-mitre-attack-mcp-server/issues/new)
-- 🔧 [Submit Pull Requests](https://github.com/imouiche/complete-mitre-attack-mcp-server/pulls)
-- 💬 [Start a Discussion](https://github.com/imouiche/complete-mitre-attack-mcp-server/discussions)
-
-All contributions welcome!
-
-### Development Setup
+### Development setup
 
 ```bash
 git clone https://github.com/imouiche/complete-mitre-attack-mcp-server.git
 cd complete-mitre-attack-mcp-server
 uv sync
-# uv run pytest (test/ folder not yet released)
 uv run python -m mitre_mcp_server.server
 ```
 
 ---
 
-## 📜 License
+## License
 
-Apache License 2.0
-
-See [LICENSE](LICENSE) for full details.
+Apache License 2.0. See [LICENSE](LICENSE).
 
 ---
 
-## 👨‍💻 About the Author
+## Author
 
-**Inoussa Mouiche, Ph.D.**  
-AI/ML Researcher | Cybersecurity | Agentic AI Systems | Software Engineering
+**Inoussa Mouiche, Ph.D.**
+AI/ML research, cybersecurity, agentic AI systems, software engineering
 
-🎓 **University of Windsor** - WASP Lab  
-🔬 **Research Focus**: Threat Intelligence Automation, Machine Learning, Multi-Agent Security Systems, LLM-Powered Security Operations
+University of Windsor, WASP Lab. Research focus: threat intelligence
+automation, machine learning, multi-agent security systems and LLM-powered
+security operations.
 
-📫 **Connect**
-- 🐙 GitHub: [@imouiche](https://github.com/imouiche)
-- 📧 Email: mouiche@uwindsor.ca
-- 💼 LinkedIn: [Inoussa Mouiche, Ph.D.](https://www.linkedin.com/in/inoussa-mouiche-ph-d-b5b5138b/)
-- 📚 Google Scholar: [Publications](https://scholar.google.com/citations?user=_d4cEVoAAAAJ&hl=en)
+Nominated for the [Governor General's Academic Medal](https://www.gg.ca/en/honours/governor-generals-awards/governor-generals-academic-medal) (Gold).
 
-🎓 **Award Nomination** 
-- Gold Medal: [The Governor General's Academic Medal ](https://www.gg.ca/en/honours/governor-generals-awards/governor-generals-academic-medal)
+- GitHub — [@imouiche](https://github.com/imouiche)
+- Email — mouiche@uwindsor.ca
+- LinkedIn — [Inoussa Mouiche, Ph.D.](https://www.linkedin.com/in/inoussa-mouiche-ph-d-b5b5138b/)
+- Google Scholar — [Publications](https://scholar.google.com/citations?user=_d4cEVoAAAAJ&hl=en)
 
-💼 **Open to opportunities** in:
-- AI/ML Engineering & Research
-- Cybersecurity & Threat Intelligence
-- Agentic AI Development
-- Security Automation & Orchestration
-- Academic & Industry Collaborations
+Open to opportunities in AI/ML engineering and research, cybersecurity and
+threat intelligence, agentic AI development, security automation, and academic
+or industry collaboration.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- Built on [MITRE ATT&CK®](https://attack.mitre.org/) - the industry standard for adversary tactics and techniques
-- Powered by [mitreattack-python](https://github.com/mitre-attack/mitreattack-python) - official MITRE library
-- Implements [Model Context Protocol](https://modelcontextprotocol.io) - Anthropic's standard for AI-tool integration
-- Inspired by the amazing MCP developer community including [R. Jasper](https://www.remyjaspers.com/blog/mitre_attack_mcp_server/), and more...
+- Built on [MITRE ATT&CK](https://attack.mitre.org/), the industry standard for
+  adversary tactics and techniques
+- Uses [mitreattack-python](https://github.com/mitre-attack/mitreattack-python),
+  MITRE's official library
+- Implements the [Model Context Protocol](https://modelcontextprotocol.io)
+- Thanks to the MCP developer community, including
+  [R. Jasper](https://www.remyjaspers.com/blog/mitre_attack_mcp_server/)
 
-**MITRE ATT&CK®** is a registered trademark of The MITRE Corporation.
+MITRE ATT&CK and ATLAS are registered trademarks of The MITRE Corporation.
+This project is not affiliated with or endorsed by The MITRE Corporation.
 
 ---
 
 <div align="center">
 
-**⭐ Star this repo if you find it useful!**
+<a href="https://mcprush.com/to/imouiche-mitre-attack-mcp?ref=badge"><img width="304" height="160" src="https://mcprush.com/badge/imouiche-mitre-attack-mcp/card.svg" alt="MITRE ATT&CK MCP server on MCPRush" /></a>
 
-**Interested in collaborating on agentic engineering systems?** [Let's connect!](https://www.linkedin.com/in/inoussa-mouiche-ph-d-b5b5138b/)
+If this project is useful to you, consider starring the repository.
 
-Made with ❤️ for the cybersecurity and AI communities
-
-[⬆ Back to Top](#-mitre-attck-mcp-server)
+[Back to top](#mitre-attck-mcp-server)
 
 </div>
