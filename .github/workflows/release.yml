@@ -1,0 +1,138 @@
+name: Release to npm
+
+# Publishes to npm using trusted publishing (OIDC). There is no NPM_TOKEN and
+# no one-time password: GitHub Actions proves the workflow's identity to npm
+# directly, so releases need neither a stored secret nor an interactive
+# terminal.
+#
+# npm is removing direct-publish capability from 2FA-bypass granular access
+# tokens in January 2027, which is why this uses OIDC rather than a token.
+#
+# One-time setup on npmjs.com, under the package's Settings -> Trusted
+# Publisher:
+#   Publisher:  GitHub Actions
+#   Owner:      imouiche
+#   Repository: complete-mitre-attack-mcp-server
+#   Workflow:   release.yml
+#   Environment: (leave blank)
+# An unvalidated trusted-publisher configuration expires 48 hours after it is
+# created, so push a tag within that window.
+#
+# To release:
+#   git tag v0.1.5 && git push origin v0.1.5
+# Or run this workflow manually from the Actions tab.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required: lets Actions mint the OIDC token npm verifies
+
+jobs:
+  release:
+    runs-on: ubuntu-latest # trusted publishing does not support self-hosted runners
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # setup-node v6 performs the OIDC handshake. v4 and v5 do not support
+      # trusted publishing.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      # Trusted publishing needs npm 11.5.1 or newer; the bundled npm may be
+      # older than that depending on the Node release.
+      - name: Ensure npm supports trusted publishing
+        run: |
+          npm install -g npm@latest
+          npm --version
+
+      - name: Check run.js parses
+        run: node --check run.js
+
+      - name: Check the three manifests agree on one version
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          PY=$(grep -m1 '^version' pyproject.toml | sed -E 's/.*"(.*)".*/\1/')
+          SRV=$(node -p "require('./server.json').version")
+          SRVPKG=$(node -p "require('./server.json').packages.map(p=>p.version).join(',')")
+          echo "package.json=$PKG pyproject=$PY server.json=$SRV packages=$SRVPKG"
+          for v in "$PY" "$SRV" "$SRVPKG"; do
+            if [ "$v" != "$PKG" ]; then
+              echo "::error::Version mismatch. package.json is $PKG but found $v."
+              exit 1
+            fi
+          done
+
+      # Guards against tagging v0.1.6 while package.json still says 0.1.5.
+      - name: Check the tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag v$TAG does not match package.json version $PKG."
+            exit 1
+          fi
+
+      - name: Check this version is not already published
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          NAME=$(node -p "require('./package.json').name")
+          if npm view "$NAME@$PKG" version >/dev/null 2>&1; then
+            echo "::error::$NAME@$PKG is already on npm. Versions are immutable; bump the version."
+            exit 1
+          fi
+          echo "$NAME@$PKG is unpublished, proceeding."
+
+      # The npm package ships the Python source but not its dependencies, so
+      # run.js provisions them at runtime. Verify the shipped source imports
+      # under the pinned dependency set before publishing it.
+      - name: Verify the packaged Python source
+        run: |
+          # Write the declared specifiers to a requirements file rather than
+          # interpolating them into the command line: they contain '<' and ',',
+          # and command substitution does not strip quotes, so an inline
+          # $(...) would hand the shell a redirect.
+          python3 - <<'PY'
+          import tomllib, pathlib
+          with open("pyproject.toml", "rb") as f:
+              deps = tomllib.load(f)["project"]["dependencies"]
+          pathlib.Path("/tmp/reqs.txt").write_text("\n".join(deps) + "\n")
+          print("installing:", ", ".join(deps))
+          PY
+          python3 -m venv /tmp/verify
+          /tmp/verify/bin/pip install --quiet --upgrade pip
+          /tmp/verify/bin/pip install --quiet -r /tmp/reqs.txt
+          /tmp/verify/bin/python -c "import importlib.metadata as m; print('mcp', m.version('mcp'))"
+          PYTHONPATH=src /tmp/verify/bin/python - <<'PY'
+          import asyncio
+          from mitre_mcp_server.server import mcp
+          tools = asyncio.run(mcp.list_tools())
+          assert len(tools) == 65, f"expected 65 tools, got {len(tools)}"
+          missing = [t.name for t in tools if not (t.description or "").strip()]
+          assert not missing, f"tools without descriptions: {missing}"
+          print(f"{len(tools)} tools registered, all documented")
+          PY
+
+      - name: Show what will be published
+        run: npm publish --dry-run --access public
+
+      # No NODE_AUTH_TOKEN. setup-node v6 plus id-token:write is the whole
+      # authentication story, and npm attaches provenance automatically.
+      - name: Publish
+        run: npm publish --access public
+
+      - name: Confirm
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          NAME=$(node -p "require('./package.json').name")
+          sleep 10
+          echo "npm now reports: $(npm view "$NAME" version)"
+          echo "Published $NAME@$PKG" >> "$GITHUB_STEP_SUMMARY"
