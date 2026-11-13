@@ -36,8 +36,28 @@ mitre-mcp-server = "mitre_mcp_server.server:main"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+# The repository carries a checked-in copy of the ATT&CK STIX bundles under
+# src/mitre_mcp_server/data/v18.1/ (56MB). Nothing reads it: the server
+# resolves its data directory from MITRE_MCP_DATA_DIR or
+# ~/.mitre-mcp-server/data and downloads the release that
+# mitreattack-python reports as current, now v20.1. Shipping it made the wheel
+# 9.6MB, 97% of which was dead and stale. Excluding it takes the wheel under
+# 100KB; first run downloads the current data as it always did.
 [tool.hatch.build.targets.wheel]
 packages = ["src/mitre_mcp_server"]
+exclude = ["data/v*"]
+
+# Tests are developer tooling, not something users of the package need. They
+# are also script-style rather than a pytest suite, so they execute on import
+# and are of no use to a downstream packager.
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "src/mitre_mcp_server/data/v*",
+    "tests",
+    "test_parser_quick.py",
+    "temp-config.json",
+    ".github",
+]
 
 [dependency-groups]
 dev = [
