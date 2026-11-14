@@ -6,3 +6,6 @@ __pycache__/
 .pytest_cache/
 uv.lock
 .mitre-mcp-server/
+
+# mcp-publisher writes auth tokens here; never commit them
+.mcpregistry_*
