@@ -36,6 +36,7 @@
     "run.js",
     "pyproject.toml",
     "src/**/*.py",
+    "!src/mitre_mcp_server/utils/**",
     "README.md",
     "LICENSE"
   ]

@@ -160,7 +160,17 @@ jobs:
           /tmp/verify/bin/pip install --quiet --upgrade pip
           /tmp/verify/bin/pip install --quiet -r /tmp/reqs.txt
           /tmp/verify/bin/python -c "import importlib.metadata as m; print('mcp', m.version('mcp'))"
-          PYTHONPATH=src /tmp/verify/bin/python - <<'PY'
+
+          # Verify the PACKED tarball, not the repo tree. package.json files[]
+          # excludes modules the server does not need, so checking src/ would
+          # pass even if an entry wrongly excluded something required. This runs
+          # against exactly the bytes users receive.
+          npm pack --silent >/dev/null
+          rm -rf /tmp/pkg && mkdir -p /tmp/pkg
+          tar xzf ./*.tgz -C /tmp/pkg --strip-components=1
+          echo "packed modules:"
+          find /tmp/pkg/src -name '*.py' | sed 's|/tmp/pkg/||' | sort | sed 's/^/  /'
+          PYTHONPATH=/tmp/pkg/src /tmp/verify/bin/python - <<'PY'
           import asyncio
           from mitre_mcp_server.server import mcp
           tools = asyncio.run(mcp.list_tools())
