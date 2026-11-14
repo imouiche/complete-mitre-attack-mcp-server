@@ -74,14 +74,18 @@ jobs:
       # fallback. Informational: if neither is usable the publish step fails
       # with npm's own message, which is clearer than a guess made here.
       - name: Report the available publish credential
+        id: creds
         run: |
           if [ -n "${NPM_TOKEN:-}" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
             echo "NPM_TOKEN secret is set; publishing with it."
           elif [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
             echo "No NPM_TOKEN; will attempt trusted publishing (OIDC)."
             echo "This needs a Trusted Publisher entry on npmjs.com naming"
             echo "  owner=${GITHUB_REPOSITORY%%/*} repo=${GITHUB_REPOSITORY#*/} workflow=release.yml"
           else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Neither NPM_TOKEN nor an OIDC token is available; publish will fail."
           fi
         env:
@@ -95,7 +99,7 @@ jobs:
       # or npm sends the placeholder instead of running the OIDC exchange and
       # the registry answers 404.
       - name: Remove the placeholder credential when using OIDC
-        if: ${{ secrets.NPM_TOKEN == '' }}
+        if: steps.creds.outputs.has_token == 'false'
         run: |
           RC="${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
           if [ -f "$RC" ]; then
