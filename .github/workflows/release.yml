@@ -200,7 +200,10 @@ jobs:
       - name: Check the README tool counts match the code
         run: PYTHONPATH=src /tmp/verify/bin/python scripts/check_tool_counts.py
 
+      # --dry-run still queries the registry and errors on an existing
+      # version, so it is skipped alongside the real publish.
       - name: Show what would be published
+        if: steps.published.outputs.already == 'false'
         run: npm publish --dry-run --access public
 
       # Publishing needs a credential this workflow does not always have.
