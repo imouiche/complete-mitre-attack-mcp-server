@@ -69,38 +69,39 @@ jobs:
           npm install -g npm@latest
           npm --version
 
-      # OIDC needs these two variables, which Actions injects only when the job
-      # really holds id-token: write. Without them npm cannot exchange a token
-      # and fails with ENEEDAUTH, which reads like a missing secret rather than
-      # a missing permission.
-      - name: Check the OIDC token is available
+      # Reports which credential this run can use. OIDC needs id-token: write
+      # plus a matching trusted-publisher entry on npmjs.com; NPM_TOKEN is the
+      # fallback. Informational: if neither is usable the publish step fails
+      # with npm's own message, which is clearer than a guess made here.
+      - name: Report the available publish credential
         run: |
-          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
-            echo "::error::No OIDC token available. The job did not receive id-token: write."
-            echo "ACTIONS_ID_TOKEN_REQUEST_URL set: $([ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] && echo yes || echo no)"
-            echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN set: $([ -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ] && echo yes || echo no)"
-            exit 1
+          if [ -n "${NPM_TOKEN:-}" ]; then
+            echo "NPM_TOKEN secret is set; publishing with it."
+          elif [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "No NPM_TOKEN; will attempt trusted publishing (OIDC)."
+            echo "This needs a Trusted Publisher entry on npmjs.com naming"
+            echo "  owner=${GITHUB_REPOSITORY%%/*} repo=${GITHUB_REPOSITORY#*/} workflow=release.yml"
+          else
+            echo "::warning::Neither NPM_TOKEN nor an OIDC token is available; publish will fail."
           fi
-          echo "OIDC token endpoint is available."
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # Remove the placeholder credential setup-node wrote, keeping the
-      # registry line, so npm has a registry but no token and therefore runs
-      # the OIDC exchange.
-      - name: Strip the placeholder credential
+      # setup-node writes an .npmrc containing
+      #   //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+      # and defaults NODE_AUTH_TOKEN to the literal placeholder
+      # XXXXX-XXXXX-XXXXX-XXXXX. With a real NPM_TOKEN that line is what
+      # authenticates the publish, so it must stay. Without one it has to go,
+      # or npm sends the placeholder instead of running the OIDC exchange and
+      # the registry answers 404.
+      - name: Remove the placeholder credential when using OIDC
+        if: ${{ secrets.NPM_TOKEN == '' }}
         run: |
           RC="${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
-          echo "npm userconfig: $RC"
           if [ -f "$RC" ]; then
-            sed -E 's/^(.*_authToken=).*/\1<redacted>/' "$RC"
             sed -i '/_authToken/d' "$RC"
-            echo "--- after stripping ---"
-            cat "$RC"
+            echo "stripped the placeholder; npm will use OIDC"
           fi
-          if npm config list 2>/dev/null | grep -q '_authToken'; then
-            echo "::error::An _authToken is still configured; it would shadow OIDC."
-            exit 1
-          fi
-          echo "No credential configured; OIDC will be used."
 
       - name: Check run.js parses
         run: node --check run.js
@@ -130,15 +131,22 @@ jobs:
             exit 1
           fi
 
-      - name: Check this version is not already published
+      # Already-published is a normal state, not an error: re-running a tag, or
+      # publishing by hand and then pushing the tag, both land here. Record it
+      # and skip the publish rather than failing the run, so a red result always
+      # means something is actually wrong.
+      - name: Is this version already on npm?
+        id: published
         run: |
           PKG=$(node -p "require('./package.json').version")
           NAME=$(node -p "require('./package.json').name")
           if npm view "$NAME@$PKG" version >/dev/null 2>&1; then
-            echo "::error::$NAME@$PKG is already on npm. Versions are immutable; bump the version."
-            exit 1
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "$NAME@$PKG is already on npm; verification will run, publish will be skipped."
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+            echo "$NAME@$PKG is unpublished."
           fi
-          echo "$NAME@$PKG is unpublished, proceeding."
 
       # The npm package ships the Python source but not its dependencies, so
       # run.js provisions them at runtime. Verify the shipped source imports
@@ -188,20 +196,37 @@ jobs:
       - name: Check the README tool counts match the code
         run: PYTHONPATH=src /tmp/verify/bin/python scripts/check_tool_counts.py
 
-      - name: Show what will be published
+      - name: Show what would be published
         run: npm publish --dry-run --access public
 
-      # No credential is passed. setup-node v6 plus id-token:write is the whole
-      # authentication story, and npm attaches provenance automatically.
-      # NODE_AUTH_TOKEN is blanked so setup-node's placeholder cannot be picked
-      # up from the environment. Verbose logging so an OIDC failure is
-      # diagnosable rather than just "need auth".
+      # Publishing needs a credential this workflow does not always have.
+      # Trusted publishing (OIDC) requires a matching entry under the package's
+      # Settings -> Trusted Publisher on npmjs.com; without it the token
+      # exchange answers 404 "package not found". NPM_TOKEN is the fallback for
+      # repositories that have a granular token in Actions secrets.
+      #
+      # Verbose logging so a failure names the cause rather than just
+      # "need auth".
       - name: Publish
+        if: steps.published.outputs.already == 'false'
         env:
-          NODE_AUTH_TOKEN: ""
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public --loglevel verbose
 
+      - name: Already released
+        if: steps.published.outputs.already == 'true'
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          NAME=$(node -p "require('./package.json').name")
+          {
+            echo "### Verified, nothing to publish"
+            echo
+            echo "\`$NAME@$PKG\` is already on npm, so every check ran against"
+            echo "the released artifact and the publish step was skipped."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Confirm
+        if: steps.published.outputs.already == 'false'
         run: |
           PKG=$(node -p "require('./package.json').version")
           NAME=$(node -p "require('./package.json').name")
